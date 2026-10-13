@@ -1,4 +1,3 @@
-
 <!-- ====================================================== -->
 <!--                  SHAMGANESH // DEV                    -->
 <!-- ====================================================== -->
@@ -338,20 +337,21 @@ Published research on an AI-powered Fashion Recommendation System.
 
 <div align="center">
 
-  <img src="https://img.shields.io/badge/DAILY_QUEST-Write%20Better%20Code-0891B2?style=for-the-badge" alt="Daily coding quest"/>
+  <img src="https://img.shields.io/badge/WORLD-Contribution%20Cave-5B8731?style=for-the-badge" alt="Minecraft world"/>
+  <img src="https://img.shields.io/badge/DAILY_QUEST-Mine%20Better%20Code-0891B2?style=for-the-badge" alt="Daily coding quest"/>
   <img src="https://img.shields.io/badge/NEXT_QUEST-Solve%20DSA%20Problems-7C3AED?style=for-the-badge" alt="DSA quest"/>
 
   <br/><br/>
 
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/github-snake-dark.svg"/>
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/github-snake.svg"/>
-    <img src="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/github-snake.svg" width="100%" alt="Animated contribution snake"/>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/minecraft-snake-dark.svg"/>
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/minecraft-snake.svg"/>
+    <img src="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/minecraft-snake.svg" width="100%" alt="Steve mining my GitHub contributions while a Creeper chases him"/>
   </picture>
 
   <br/>
 
-  <i>Every commit is progress. Every bug is a side quest.</i>
+  <i>Every commit is a block mined. Every bug is a Creeper. Keep digging.</i>
 
 </div>
 
