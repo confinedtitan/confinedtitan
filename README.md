@@ -119,28 +119,6 @@ Goal       : Build useful software and keep improving.
 
 </div>
 
-## 📈 Contribution Timeline
-
-<div align="center">
-
-  <a href="https://github.com/confinedtitan?tab=overview">
-    <img src="https://ghchart.rshah.org/22D3EE/confinedtitan" alt="GitHub contribution calendar" width="100%"/>
-  </a>
-
-  <p><i>My GitHub contribution activity</i></p>
-
-</div>
-
-## 🏆 Developer Achievements
-
-<div align="center">
-
-  <img src="https://img.shields.io/badge/FOCUS-Full--Stack%20Development-0891B2?style=for-the-badge" alt="Full-stack development"/>
-  <img src="https://img.shields.io/badge/INTEREST-AI%20%26%20RAG-7C3AED?style=for-the-badge" alt="AI and RAG"/>
-  <img src="https://img.shields.io/badge/MINDSET-Always%20Learning-16A34A?style=for-the-badge" alt="Always learning"/>
-
-</div>
-
 ## 🐍 Contribution Game
 
 <div align="center">
