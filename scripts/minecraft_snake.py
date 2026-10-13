@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Minecraft contribution graph generator (v2).
+Minecraft contribution cave generator (v3).
 
 The contribution graph becomes an underground world: dirt and gravel for empty
-days, and coal / iron / gold / diamond ore for days with commits. Steve tunnels
+days, occasional lava, and diamond ore on every day with at least one contribution. Steve tunnels
 to the ore on a random route, pausing to mine each block, while a Creeper trails
 his tunnel and blows up at the end. The route is different on every run.
 
@@ -161,30 +161,41 @@ def ore_symbol(level):
     return _symbol(f"o{level}", pix)
 
 
+def lava_symbol():
+    rnd = random.Random(808)
+    pix = [[rnd.choice(["#402018", "#57251b", "#2c1a1a"]) for _ in range(8)] for _ in range(8)]
+    for _ in range(22):
+        pix[rnd.randrange(8)][rnd.randrange(8)] = rnd.choice(["#ff6a00", "#ff9d00", "#ffd447", "#c93600"])
+    return _symbol("lava", pix)
+
+
 def all_symbols():
     return "".join([
         ground_symbol("d0", DIRT, DIRT_SPECKS, 11), ground_symbol("d1", DIRT, DIRT_SPECKS, 12),
         ground_symbol("g0", GRAVEL, GRAVEL_SPECKS, 21), ground_symbol("g1", GRAVEL, GRAVEL_SPECKS, 22),
+        lava_symbol(),
     ] + [ore_symbol(l) for l in range(1, 5)])
 
 
 def block_kind(cell, level):
     """symbol id for a cell; stable per cell so the world looks the same on every run"""
-    if level:
+    if level == -1:
+        return "lava"
+    if level > 0:
         return f"o{level}"
     r = random.Random(cell[0] * 1000 + cell[1])
     prefix = "g" if r.random() < 0.32 else "d"
     return f"{prefix}{r.randrange(2)}"
 
 
-FLASH = {"o": ("#ffffff", .85), "d": ("#e0c9a6", .55), "g": ("#eeeeee", .55)}
+FLASH = {"o": ("#ffffff", .85), "d": ("#e0c9a6", .55), "g": ("#eeeeee", .55), "l": ("#ff6a00", .9)}
 
 
 # ---------------------------------------------------------------- route planning
 def plan(grid, rnd):
     """Random tunnelling route. Returns timeline data in 'steps' (1 step = 1 block of walking)."""
     cells = sorted(grid)
-    targets = {c for c in cells if grid[c]} or set(rnd.sample(cells, min(6, len(cells))))
+    targets = {c for c in cells if grid[c] > 0} or set(rnd.sample(cells, min(6, len(cells))))
     pos = (0, rnd.randrange(7))
     if pos not in grid:
         pos = cells[0]
@@ -198,7 +209,7 @@ def plan(grid, rnd):
         if c in dug or c not in grid:
             return
         lvl = grid[c]
-        if lvl:                              # ore: stop and mine it
+        if lvl > 0:                          # diamond: stop and mine it
             t0 = t
             swings.append(t0)
             t += MINE_STEPS
@@ -286,15 +297,15 @@ def build(theme_name, total, weeks, grid, P):
 
     W = 2 * M + nweeks * PITCH - GAP
     H = GY + 7 * PITCH + 100
-    ore_total = sum(1 for v in grid.values() if v)
-    counts = Counter(v for v in grid.values() if v)
+    ore_total = sum(1 for v in grid.values() if v > 0)
+    counts = Counter(v for v in grid.values() if v > 0)
 
     o = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
          f'role="img" aria-label="Minecraft contribution graph for {html.escape(USER)}">',
          f'<title>{html.escape(USER)}\'s contribution cave</title>',
          f'<defs>{all_symbols()}</defs>',
          f'<rect width="{W}" height="{H}" rx="12" fill="{th["bg"]}" stroke="{th["border"]}"/>',
-         text(M, 32, f"{USER}'s Contribution Cave", 16, th["text"], th["shadow"]),
+         text(M, 32, f"{USER}'s Minecraft Contribution Cave", 16, th["text"], th["shadow"]),
          text(W - M, 32, f"{total} blocks mined this year", 12, th["text"], th["shadow"], "end")]
 
     # world blocks
@@ -414,9 +425,15 @@ def main():
     total, weeks = demo_data() if DEMO else fetch(USER, TOKEN)
     if DEMO:
         print("DEMO mode: using fake contribution data", file=sys.stderr)
-    grid = {(w, d["weekday"]): LEVELS[d["contributionLevel"]]
+    # Any contribution that day = diamond. Contribution intensity does not change the block.
+    grid = {(w, d["weekday"]): (4 if d["contributionCount"] > 0 else 0)
             for w, wk in enumerate(weeks) for d in wk["contributionDays"]}
+    # Add occasional lava to non-contribution days. Dirt/gravel remains the default
+    # texture for every other empty day. The random seed changes each workflow run.
     rnd = random.Random(SEED) if SEED else random.Random()
+    for cell, level in list(grid.items()):
+        if level == 0 and rnd.random() < 0.055:
+            grid[cell] = -1
     P = plan(grid, rnd)           # one route, shared by the light and dark versions
     OUT.mkdir(parents=True, exist_ok=True)
     for name, fname in [("light", "minecraft-snake.svg"), ("dark", "minecraft-snake-dark.svg")]:
