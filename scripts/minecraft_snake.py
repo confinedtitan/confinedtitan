@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
 """
-Minecraft contribution graph generator.
+Minecraft contribution graph generator (v2).
 
-Steve mines through your GitHub contribution graph (coal -> iron -> gold -> diamond),
-a Creeper chases him, and blows up at the end of the loop. Pure stdlib, outputs
-animated SVGs (SMIL) that work inside a GitHub README <img>.
+The contribution graph becomes an underground world: dirt and gravel for empty
+days, and coal / iron / gold / diamond ore for days with commits. Steve tunnels
+to the ore on a random route, pausing to mine each block, while a Creeper trails
+his tunnel and blows up at the end. The route is different on every run.
+
+Pure stdlib. Outputs animated SVGs (SMIL) that work inside a GitHub README <img>.
 
 Env vars:
   GH_USER        GitHub username (or pass as argv[1])
   GITHUB_TOKEN   token for the GraphQL API (omit + set DEMO=1 for fake data)
   OUT_DIR        output folder (default: dist)
-  STEP_SECONDS   seconds Steve spends per block (default: 0.09)
+  STEP_SECONDS   seconds per step Steve takes (default: 0.22, higher = slower)
+  MAX_SECONDS    cap on the total loop length (default: 110)
+  SEED           fix the random route (default: new route every run)
 """
 import html
 import json
+import math
 import os
 import random
 import sys
@@ -25,30 +31,37 @@ USER = os.environ.get("GH_USER") or (sys.argv[1] if len(sys.argv) > 1 else "stev
 TOKEN = os.environ.get("GITHUB_TOKEN")
 DEMO = os.environ.get("DEMO") == "1" or not TOKEN
 OUT = Path(os.environ.get("OUT_DIR", "dist"))
-STEP = float(os.environ.get("STEP_SECONDS", "0.09"))
+STEP = float(os.environ.get("STEP_SECONDS", "0.22"))
+MAX_SECONDS = float(os.environ.get("MAX_SECONDS", "110"))
+SEED = os.environ.get("SEED")
 
-CELL, GAP, PX = 16, 2, 2          # block size, gap, texture pixel size
+CELL, GAP, PX = 16, 2, 2
 PITCH = CELL + GAP
-M = 24                            # outer margin
-GY = 52                           # grid top
-CHASE = 9                         # how many blocks the Creeper trails Steve by
-EXTRA = 8                         # idle steps after the explosion before reset
+M = 24
+GY = 52
+MINE_STEPS = 3.0     # how long Steve stands still to mine an ore block
+DELAY = 12.0         # the Creeper trails Steve by this many steps
+EXTRA = 10.0         # idle steps after the explosion before the loop resets
 
 LEVELS = {"NONE": 0, "FIRST_QUARTILE": 1, "SECOND_QUARTILE": 2,
           "THIRD_QUARTILE": 3, "FOURTH_QUARTILE": 4}
-ORES = {  # level -> (name, ore colours)
+ORES = {
     1: ("Coal",    ["#1c1c1c", "#2b2b2b", "#111111"]),
     2: ("Iron",    ["#d8af93", "#c49a7c", "#e8c8b0"]),
     3: ("Gold",    ["#fcee4b", "#e8c500", "#fff7a0"]),
     4: ("Diamond", ["#5decf5", "#2bc4d0", "#b8fbff"]),
 }
 STONE = ["#7d7d7d", "#8a8a8a", "#6f6f6f", "#777777", "#848484"]
+DIRT = ["#866043", "#79553a", "#6b4a31", "#8f6a4a", "#7a5a3e"]
+DIRT_SPECKS = [("#5a3d27", 7), ("#a07850", 3)]
+GRAVEL = ["#857f7d", "#7a7573", "#948f8d", "#6d6866", "#8b8685"]
+GRAVEL_SPECKS = [("#5b5755", 8), ("#b3aeac", 4)]
 
 THEMES = {
-    "light": dict(bg="#ffffff", border="#d0d7de", empty="#e4e8ed",
-                  text="#24292f", shadow="#c9d1d9", slot="#c6c6c6", slot_edge="#555555"),
-    "dark":  dict(bg="#0d1117", border="#30363d", empty="#1b222c",
-                  text="#e6edf3", shadow="#000000", slot="#3a3f47", slot_edge="#8b949e"),
+    "light": dict(bg="#ffffff", border="#d0d7de", text="#24292f", shadow="#c9d1d9",
+                  slot="#c6c6c6", slot_edge="#555555"),
+    "dark":  dict(bg="#0d1117", border="#30363d", text="#e6edf3", shadow="#000000",
+                  slot="#3a3f47", slot_edge="#8b949e"),
 }
 
 STEVE = [
@@ -94,7 +107,7 @@ def demo_data():
         for d in range(7):
             if w == 52 and d > 3:
                 break
-            lvl = rnd.choices(names, weights=[40, 25, 18, 10, 7])[0]
+            lvl = rnd.choices(names, weights=[85, 6, 4, 3, 2])[0]
             c = LEVELS[lvl] * rnd.randint(1, 4)
             total += c
             days.append({"weekday": d, "contributionLevel": lvl, "contributionCount": c})
@@ -102,16 +115,7 @@ def demo_data():
     return total, weeks
 
 
-# ---------------------------------------------------------------- drawing helpers
-def fr(t, steps):
-    """time fraction (0..1) of step t"""
-    return t / steps
-
-
-def f(x):
-    return f"{x:.5f}".rstrip("0").rstrip(".") or "0"
-
-
+# ---------------------------------------------------------------- textures
 def sprite(rows, pal, px=PX):
     out = []
     for y, row in enumerate(rows):
@@ -129,26 +133,121 @@ def sprite(rows, pal, px=PX):
     return "".join(out)
 
 
-def block_symbol(level):
-    rnd = random.Random(level * 101)
-    pix = [[rnd.choice(STONE) for _ in range(8)] for _ in range(8)]
-    if level:
-        _, cols = ORES[level]
-        for _ in range(4):  # ore clusters
-            cx, cy = rnd.randint(1, 6), rnd.randint(1, 6)
-            for dx, dy in [(0, 0), (1, 0), (0, 1), (1, 1)][: rnd.randint(2, 4)]:
-                if cx + dx < 8 and cy + dy < 8:
-                    pix[cy + dy][cx + dx] = rnd.choice(cols)
+def _symbol(sid, pix):
     rects = "".join(f'<rect x="{x*PX}" y="{y*PX}" width="{PX}" height="{PX}" fill="{pix[y][x]}"/>'
                     for y in range(8) for x in range(8))
     edge = f'<rect x=".5" y=".5" width="{CELL-1}" height="{CELL-1}" fill="none" stroke="#000" stroke-opacity=".4"/>'
-    return f'<g id="b{level}">{rects}{edge}</g>'
+    return f'<g id="{sid}">{rects}{edge}</g>'
 
 
-def opacity_anim(a, b, eps, dur):
-    """visible -> hidden at a -> visible again fading in between b and the loop end"""
-    return (f'<animate attributeName="opacity" values="1;1;0;0;1" '
-            f'keyTimes="0;{f(a)};{f(a+eps)};{f(b)};1" dur="{dur:.2f}s" repeatCount="indefinite"/>')
+def ground_symbol(sid, palette, specks, seed):
+    rnd = random.Random(seed)
+    pix = [[rnd.choice(palette) for _ in range(8)] for _ in range(8)]
+    for col, count in specks:
+        for _ in range(count):
+            pix[rnd.randrange(8)][rnd.randrange(8)] = col
+    return _symbol(sid, pix)
+
+
+def ore_symbol(level):
+    rnd = random.Random(level * 101)
+    pix = [[rnd.choice(STONE) for _ in range(8)] for _ in range(8)]
+    cols = ORES[level][1]
+    for _ in range(4):
+        cx, cy = rnd.randint(1, 6), rnd.randint(1, 6)
+        for dx, dy in [(0, 0), (1, 0), (0, 1), (1, 1)][: rnd.randint(2, 4)]:
+            if cx + dx < 8 and cy + dy < 8:
+                pix[cy + dy][cx + dx] = rnd.choice(cols)
+    return _symbol(f"o{level}", pix)
+
+
+def all_symbols():
+    return "".join([
+        ground_symbol("d0", DIRT, DIRT_SPECKS, 11), ground_symbol("d1", DIRT, DIRT_SPECKS, 12),
+        ground_symbol("g0", GRAVEL, GRAVEL_SPECKS, 21), ground_symbol("g1", GRAVEL, GRAVEL_SPECKS, 22),
+    ] + [ore_symbol(l) for l in range(1, 5)])
+
+
+def block_kind(cell, level):
+    """symbol id for a cell; stable per cell so the world looks the same on every run"""
+    if level:
+        return f"o{level}"
+    r = random.Random(cell[0] * 1000 + cell[1])
+    prefix = "g" if r.random() < 0.32 else "d"
+    return f"{prefix}{r.randrange(2)}"
+
+
+FLASH = {"o": ("#ffffff", .85), "d": ("#e0c9a6", .55), "g": ("#eeeeee", .55)}
+
+
+# ---------------------------------------------------------------- route planning
+def plan(grid, rnd):
+    """Random tunnelling route. Returns timeline data in 'steps' (1 step = 1 block of walking)."""
+    cells = sorted(grid)
+    targets = {c for c in cells if grid[c]} or set(rnd.sample(cells, min(6, len(cells))))
+    pos = (0, rnd.randrange(7))
+    if pos not in grid:
+        pos = cells[0]
+    start = pos
+    t = 0.0
+    frames = [(0.0, pos)]
+    dug, swings, mined = {}, [], []
+
+    def visit(c):
+        nonlocal t
+        if c in dug or c not in grid:
+            return
+        lvl = grid[c]
+        if lvl:                              # ore: stop and mine it
+            t0 = t
+            swings.append(t0)
+            t += MINE_STEPS
+            frames.append((t, c))
+            dug[c] = t0 + 0.85 * MINE_STEPS
+            mined.append((dug[c], lvl))
+        else:                                # dirt / gravel: dig straight through
+            dug[c] = t + 0.3
+        targets.discard(c)
+
+    visit(pos)
+    while targets:
+        cur = pos
+        ranked = sorted(targets, key=lambda c: (abs(c[0] - cur[0]) + abs(c[1] - cur[1]), rnd.random()))
+        near = ranked[:3]
+        tgt = rnd.choices(near, weights=[5, 3, 1][:len(near)])[0]
+        while pos != tgt:
+            dx, dy = tgt[0] - pos[0], tgt[1] - pos[1]
+            opts = []
+            if dx:
+                opts.append((int(math.copysign(1, dx)), 0))
+            if dy:
+                opts.append((0, int(math.copysign(1, dy))))
+            sx, sy = rnd.choice(opts)
+            pos = (pos[0] + sx, pos[1] + sy)
+            t += 1.0
+            frames.append((t, pos))
+            visit(pos)
+            if rnd.random() < 0.07:          # looks around for a moment
+                t += rnd.uniform(0.6, 2.0)
+                frames.append((t, pos))
+
+    t_end = t
+    te = t_end + DELAY
+    total_steps = te + EXTRA
+    frames.append((total_steps, pos))
+
+    vanish = dict(dug)                        # blocks near the blast also disappear
+    for c in grid:
+        if c not in vanish and (c[0] - pos[0]) ** 2 + (c[1] - pos[1]) ** 2 <= 9:
+            vanish[c] = te + 0.3
+
+    return dict(frames=frames, start=start, last=pos, vanish=vanish, swings=swings,
+                mined=sorted(mined), te=te, total=total_steps)
+
+
+# ---------------------------------------------------------------- svg helpers
+def f(x):
+    return f"{x:.5f}".rstrip("0").rstrip(".") or "0"
 
 
 def text(x, y, s, size, fill, shadow, anchor="start"):
@@ -159,143 +258,171 @@ def text(x, y, s, size, fill, shadow, anchor="start"):
             f'<text x="{x}" y="{y}" {base} fill="{fill}">{s}</text>')
 
 
-# ---------------------------------------------------------------- build
-def build(theme_name, total, weeks):
+def build(theme_name, total, weeks, grid, P):
     th = THEMES[theme_name]
-    grid = {(w, d["weekday"]): LEVELS[d["contributionLevel"]]
-            for w, wk in enumerate(weeks) for d in wk["contributionDays"]}
     nweeks = len(weeks)
+    T = P["total"]
+    te = P["te"]
+    step_s = min(STEP, MAX_SECONDS / T)
+    dur = T * step_s
+    d_attr = f'dur="{dur:.2f}s" repeatCount="indefinite"'
 
-    # serpentine path, column by column
-    path = []
-    for w in range(nweeks):
-        ds = [d for d in range(7) if (w, d) in grid]
-        if w % 2:
-            ds.reverse()
-        path += [(w, d) for d in ds]
-    n = len(path)
+    def fr(t):
+        return min(1.0, t / T)
 
-    S = n + CHASE + EXTRA          # total timeline steps
-    steps = S - 1
-    dur = steps * STEP
-    te = n - 1 + CHASE             # explosion step
-    eps = fr(0.2, steps)
-    back = fr(steps - 2, steps)    # reset begins here
+    eps = fr(0.2)
+    back = fr(T - 2)
+
+    def opacity_anim(a):
+        return (f'<animate attributeName="opacity" values="1;1;0;0;1" '
+                f'keyTimes="0;{f(a)};{f(a+eps)};{f(back)};1" {d_attr}/>')
+
+    def cell_xy(c):
+        return M + c[0] * PITCH, GY + c[1] * PITCH
+
+    def sprite_pos(c):
+        x, y = cell_xy(c)
+        return x + CELL / 2 - 8, y + CELL - 22
 
     W = 2 * M + nweeks * PITCH - GAP
     H = GY + 7 * PITCH + 100
+    ore_total = sum(1 for v in grid.values() if v)
     counts = Counter(v for v in grid.values() if v)
 
-    def cell_xy(w, d):
-        return M + w * PITCH, GY + d * PITCH
+    o = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
+         f'role="img" aria-label="Minecraft contribution graph for {html.escape(USER)}">',
+         f'<title>{html.escape(USER)}\'s contribution cave</title>',
+         f'<defs>{all_symbols()}</defs>',
+         f'<rect width="{W}" height="{H}" rx="12" fill="{th["bg"]}" stroke="{th["border"]}"/>',
+         text(M, 32, f"{USER}'s Contribution Cave", 16, th["text"], th["shadow"]),
+         text(W - M, 32, f"{total} blocks mined this year", 12, th["text"], th["shadow"], "end")]
 
-    def sprite_pos(w, d):
-        x, y = cell_xy(w, d)
-        return x + CELL / 2 - 8, y + CELL - 22
-
-    o = []
-    o.append(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
-             f'role="img" aria-label="Minecraft contribution graph for {html.escape(USER)}">')
-    o.append(f'<title>{html.escape(USER)}\'s contribution cave</title>')
-    o.append('<defs>' + "".join(block_symbol(l) for l in range(5)) + '</defs>')
-    o.append(f'<rect width="{W}" height="{H}" rx="12" fill="{th["bg"]}" stroke="{th["border"]}"/>')
-    o.append(text(M, 32, f"{USER}'s Contribution Cave", 16, th["text"], th["shadow"]))
-    o.append(text(W - M, 32, f"{total} blocks mined this year", 12, th["text"], th["shadow"], "end"))
-
-    # blocks
-    order = {p: i for i, p in enumerate(path)}
-    for (w, d), lvl in sorted(grid.items()):
-        x, y = cell_xy(w, d)
-        if lvl == 0:
-            o.append(f'<rect x="{x}" y="{y}" width="{CELL}" height="{CELL}" rx="2" fill="{th["empty"]}"/>')
+    # world blocks
+    for cell in sorted(grid):
+        lvl = grid[cell]
+        x, y = cell_xy(cell)
+        sid = block_kind(cell, lvl)
+        t_gone = P["vanish"].get(cell)
+        if t_gone is None:
+            o.append(f'<use href="#{sid}" x="{x}" y="{y}"/>')
             continue
-        i = order[(w, d)]
-        a = fr(i + 0.3, steps)
-        o.append(f'<use href="#b{lvl}" x="{x}" y="{y}">{opacity_anim(a, back, eps, dur)}</use>')
-        # mining flash
-        k = fr(0.6, steps)
-        o.append(f'<rect x="{x}" y="{y}" width="{CELL}" height="{CELL}" fill="#fff" opacity="0">'
-                 f'<animate attributeName="opacity" values="0;0;.85;0;0" '
-                 f'keyTimes="0;{f(a)};{f(a+k/2)};{f(a+k*2)};1" dur="{dur:.2f}s" repeatCount="indefinite"/></rect>')
+        a = fr(t_gone)
+        o.append(f'<use href="#{sid}" x="{x}" y="{y}">{opacity_anim(a)}</use>')
+        col, peak = FLASH[sid[0]]
+        k = fr(0.6)
+        o.append(f'<rect x="{x}" y="{y}" width="{CELL}" height="{CELL}" fill="{col}" opacity="0">'
+                 f'<animate attributeName="opacity" values="0;0;{peak};0;0" '
+                 f'keyTimes="0;{f(a)};{f(a+k/2)};{f(a+k*2)};1" {d_attr}/></rect>')
 
-    # Steve
-    sv = ";".join("{:.1f} {:.1f}".format(*sprite_pos(*path[min(t, n - 1)])) for t in range(S))
+    # Steve: walk keyframes
+    fs = P["frames"]
+    sv = ";".join("{:.1f} {:.1f}".format(*sprite_pos(c)) for _, c in fs)
+    sk = ";".join(f(fr(t)) for t, _ in fs)
+    # pickaxe swings only while mining
+    ang = [(0.0, -30)]
+    for t0 in P["swings"]:
+        ang += [(t0, -30), (t0 + .15 * MINE_STEPS, -75), (t0 + .4 * MINE_STEPS, 15),
+                (t0 + .65 * MINE_STEPS, -75), (t0 + .9 * MINE_STEPS, 15), (t0 + MINE_STEPS, -30)]
+    ang.append((T, -30))
+    av = ";".join(str(a) for _, a in ang)
+    ak = ";".join(f(fr(t)) for t, _ in ang)
     o.append(
         '<g>'
-        f'<animateTransform attributeName="transform" type="translate" values="{sv}" '
-        f'dur="{dur:.2f}s" repeatCount="indefinite"/>'
-        f'{opacity_anim(fr(te, steps), back, eps, dur)}'
+        f'<animateTransform attributeName="transform" type="translate" values="{sv}" keyTimes="{sk}" {d_attr}/>'
+        f'{opacity_anim(fr(te))}'
         f'{sprite(STEVE, STEVE_PAL)}'
-        '<g transform="translate(14 12)"><g>'
-        '<animateTransform attributeName="transform" type="rotate" values="-70;15;-70" dur="0.32s" repeatCount="indefinite"/>'
+        '<g transform="translate(14 12)"><g transform="rotate(-30)">'
+        f'<animateTransform attributeName="transform" type="rotate" values="{av}" keyTimes="{ak}" {d_attr}/>'
         '<rect x="0" y="-1" width="11" height="2" fill="#8b5a2b"/>'
         '<rect x="9" y="-6" width="3" height="12" fill="#5decf5"/>'
         '<rect x="12" y="-4" width="1" height="8" fill="#2bc4d0"/>'
         '</g></g></g>')
 
-    # Creeper (flashes white right before exploding)
-    cv = ";".join("{:.1f} {:.1f}".format(*sprite_pos(*path[max(0, min(t - CHASE, n - 1))])) for t in range(S))
-    ks = [fr(te - 6 + j, steps) for j in range(6)] + [fr(te + 1, steps)]
+    # Creeper: follows Steve's tunnel DELAY steps later
+    cf = [(0.0, P["start"])] + [(t + DELAY, c) for t, c in fs[:-1]] + [(T, P["last"])]
+    cv = ";".join("{:.1f} {:.1f}".format(*sprite_pos(c)) for _, c in cf)
+    ck = ";".join(f(fr(t)) for t, _ in cf)
+    fuse = [fr(te - 6 + j) for j in range(6)] + [fr(te + 1)]
     o.append(
         '<g>'
-        f'<animateTransform attributeName="transform" type="translate" values="{cv}" '
-        f'dur="{dur:.2f}s" repeatCount="indefinite"/>'
-        f'{opacity_anim(fr(te, steps), back, eps, dur)}'
+        f'<animateTransform attributeName="transform" type="translate" values="{cv}" keyTimes="{ck}" {d_attr}/>'
+        f'{opacity_anim(fr(te))}'
         f'{sprite(CREEPER, CREEPER_PAL)}'
         '<rect width="16" height="24" fill="#fff" opacity="0">'
         f'<animate attributeName="opacity" calcMode="discrete" values="0;0;1;0;1;0;1;0;0" '
-        f'keyTimes="0;{";".join(f(k) for k in ks)};1" dur="{dur:.2f}s" repeatCount="indefinite"/>'
+        f'keyTimes="0;{";".join(f(k) for k in fuse)};1" {d_attr}/>'
         '</rect></g>')
 
-    # Explosion
-    lx, ly = cell_xy(*path[-1])
+    # explosion
+    lx, ly = cell_xy(P["last"])
     cx, cy = lx + CELL / 2, ly + CELL / 2
-    a = fr(te, steps)
-    for size, col, grow in [(70, "#ff9800", 1), (44, "#fff3b0", 1)]:
+    a = fr(te)
+    for size, col in [(76, "#ff9800"), (46, "#fff3b0")]:
         h = size / 2
         o.append(
             f'<g transform="translate({cx} {cy})"><rect x="{-h}" y="{-h}" width="{size}" height="{size}" fill="{col}" opacity="0">'
             f'<animateTransform attributeName="transform" type="scale" values="0;0;1;1.25;1.25" '
-            f'keyTimes="0;{f(a)};{f(a+fr(2,steps))};{f(a+fr(4,steps))};1" dur="{dur:.2f}s" repeatCount="indefinite"/>'
+            f'keyTimes="0;{f(a)};{f(a+fr(2))};{f(a+fr(4))};1" {d_attr}/>'
             f'<animate attributeName="opacity" values="0;0;.95;0;0" '
-            f'keyTimes="0;{f(a)};{f(a+fr(1.5,steps))};{f(a+fr(4,steps))};1" dur="{dur:.2f}s" repeatCount="indefinite"/>'
+            f'keyTimes="0;{f(a)};{f(a+fr(1.5))};{f(a+fr(4))};1" {d_attr}/>'
             '</rect></g>')
 
-    # HUD ------------------------------------------------------------
+    # ---- HUD
     hy = GY + 7 * PITCH + 24
-    # hearts (vanish when the Creeper blows up)
     hearts = "".join(f'<g transform="translate({M + i*16} {hy+14})">{sprite(HEART, HEART_PAL)}</g>' for i in range(10))
-    o.append(f'<g>{opacity_anim(fr(te, steps), back, eps, dur)}{hearts}</g>')
+    o.append(f'<g>{opacity_anim(fr(te))}{hearts}</g>')
 
-    # XP bar
+    # XP bar fills as ore is mined
     bw, bx, by = 300, (W - 300) / 2, hy + 34
     o.append(text(W / 2, hy + 24, total, 16, "#7efc20", "#143300", "middle"))
     o.append(f'<rect x="{bx}" y="{by}" width="{bw}" height="8" fill="#1e1e1e" stroke="{th["slot_edge"]}"/>')
+    xp, cnt = [(0.0, 0.0)], 0
+    for tm, _ in P["mined"]:
+        xp.append((tm - 0.8, cnt / ore_total))
+        cnt += 1
+        xp.append((tm, cnt / ore_total))
+    xp += [(T - 2, cnt / ore_total if ore_total else 0), (T, 0.0)]
     o.append(f'<rect x="{bx}" y="{by}" width="0" height="8" fill="#7efc20">'
-             f'<animate attributeName="width" values="0;{bw};{bw};0" '
-             f'keyTimes="0;{f(fr(n-1, steps))};{f(back)};1" dur="{dur:.2f}s" repeatCount="indefinite"/></rect>')
+             f'<animate attributeName="width" values="{";".join(f"{v*bw:.1f}" for _, v in xp)}" '
+             f'keyTimes="{";".join(f(fr(t)) for t, _ in xp)}" {d_attr}/></rect>')
 
-    # Hotbar
+    # hotbar with counters that tick up as each ore is mined
     hx = W - M - 4 * 40
     for i, lvl in enumerate([1, 2, 3, 4]):
         sx = hx + i * 40
         o.append(f'<rect x="{sx}" y="{hy}" width="40" height="40" fill="{th["slot"]}" stroke="{th["slot_edge"]}" stroke-width="2"/>')
-        o.append(f'<use href="#b{lvl}" transform="translate({sx+4} {hy+4}) scale(2)"/>')
-        o.append(text(sx + 37, hy + 36, counts.get(lvl, 0), 12, "#ffffff", "#000000", "end"))
+        o.append(f'<use href="#o{lvl}" transform="translate({sx+4} {hy+4}) scale(2)"/>')
+        times = [tm for tm, l in P["mined"] if l == lvl]
+        for k in range(len(times) + 1):
+            fa = 0.0 if k == 0 else fr(times[k - 1])
+            fb = fr(times[k]) if k < len(times) else 1.0
+            pairs = [(0.0, 1 if fa == 0 else 0)]
+            if fa > 0:
+                pairs.append((fa, 1))
+            if fb < 1:
+                pairs.append((fb, 0))
+            o.append(
+                f'<g opacity="0"><animate attributeName="opacity" calcMode="discrete" '
+                f'values="{";".join(str(v) for _, v in pairs)}" keyTimes="{";".join(f(t) for t, _ in pairs)}" {d_attr}/>'
+                f'{text(sx + 37, hy + 36, k, 12, "#ffffff", "#000000", "end")}</g>')
 
     o.append('</svg>')
-    return "".join(o)
+    return "".join(o), dur
 
 
 def main():
     total, weeks = demo_data() if DEMO else fetch(USER, TOKEN)
     if DEMO:
         print("DEMO mode: using fake contribution data", file=sys.stderr)
+    grid = {(w, d["weekday"]): LEVELS[d["contributionLevel"]]
+            for w, wk in enumerate(weeks) for d in wk["contributionDays"]}
+    rnd = random.Random(SEED) if SEED else random.Random()
+    P = plan(grid, rnd)           # one route, shared by the light and dark versions
     OUT.mkdir(parents=True, exist_ok=True)
     for name, fname in [("light", "minecraft-snake.svg"), ("dark", "minecraft-snake-dark.svg")]:
-        svg = build(name, total, weeks)
+        svg, dur = build(name, total, weeks, grid, P)
         (OUT / fname).write_text(svg, encoding="utf-8")
-        print(f"wrote {OUT / fname} ({len(svg)//1024} KB)")
+        print(f"wrote {OUT / fname} ({len(svg)//1024} KB, {dur:.0f}s loop)")
 
 
 if __name__ == "__main__":
