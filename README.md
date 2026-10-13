@@ -1,154 +1,130 @@
-
-<!-- ==================== HERO ==================== -->
-
+<!-- ═════════════ HEADER ═════════════ -->
 <div align="center">
 
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0B1020,50:164E63,100:7C3AED&height=200&section=header&text=R%20Shamganesh&fontSize=42&fontColor=FFFFFF&animation=fadeIn&fontAlignY=35&desc=Full-Stack%20Developer%20%7C%20AI%20Enthusiast&descAlignY=55&descSize=16" width="100%" alt="Shamganesh profile banner"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=220&section=header&text=R%20Shamganesh&fontSize=54&fontAlignY=36&animation=fadeIn&desc=Frontend%20Developer%20%E2%80%A2%20Full%20Stack%20%E2%80%A2%20RAG%20Explorer&descAlignY=58&descSize=18" alt="header" width="100%" />
 
-  <a href="https://readme-typing-svg.demolab.com/">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=19&pause=1000&color=22D3EE&center=true&vCenter=true&width=650&lines=Building+full-stack+applications;Exploring+AI%2C+RAG+and+intelligent+systems;Turning+ideas+into+working+software;Learning+DSA+one+problem+at+a+time" alt="Animated developer introduction"/>
-  </a>
+<a href="https://github.com/confinedtitan">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=7AA2F7&center=true&vCenter=true&width=640&lines=Hi+%F0%9F%91%8B+I'm+Shamganesh+from+India;I+build+clean+and+fast+web+interfaces;Currently+levelling+up+on+DSA+%E2%9A%94%EF%B8%8F;Exploring+RAG+and+Full+Stack+Dev;Open+to+work+%E2%80%94+let's+build+something!" alt="Typing SVG" />
+</a>
 
-  <p>
-    <a href="https://github.com/confinedtitan">
-      <img src="https://img.shields.io/badge/GitHub-confinedtitan-181717?style=for-the-badge&logo=github" alt="GitHub"/>
-    </a>
-    <a href="https://linkedin.com/in/shamganesh-r-394969370">
-      <img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin" alt="LinkedIn"/>
-    </a>
-    <a href="https://portfolio-five-bay-83.vercel.app/">
-      <img src="https://img.shields.io/badge/Portfolio-Explore-7C3AED?style=for-the-badge&logo=vercel&logoColor=white" alt="Portfolio"/>
-    </a>
-    <a href="mailto:rshamganesh@gmail.com">
-      <img src="https://img.shields.io/badge/Email-Contact-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Email"/>
-    </a>
-  </p>
+<br/>
 
-  <img src="https://komarev.com/ghpvc/?username=confinedtitan&style=flat-square&color=0891b2&label=PROFILE+VIEWS" alt="Profile views"/>
+<img src="https://komarev.com/ghpvc/?username=confinedtitan&label=Profile%20views&color=7aa2f7&style=for-the-badge" alt="views" />
+<img src="https://img.shields.io/badge/dynamic/json?url=https://api.github.com/users/confinedtitan&query=$.public_repos&label=Public%20Repos&color=bb9af7&style=for-the-badge&logo=github" alt="repos" />
+<img src="https://img.shields.io/github/followers/confinedtitan?label=Followers&color=7dcfff&style=for-the-badge&logo=github" alt="followers" />
+<img src="https://img.shields.io/badge/Status-Open%20to%20Work-9ece6a?style=for-the-badge" alt="open to work" />
 
 </div>
 
----
+<br/>
 
-## 👨‍💻 About Me
+<!-- ═════════════ PLAYER CARD ═════════════ -->
+## 🎮 Player Card
 
 ```text
-Name       : R. Shamganesh
-Education  : B.Tech Information Technology
-Focus      : Full-Stack Development & AI
-Learning   : Data Structures & Algorithms
-Interests  : Backend Systems, RAG & AI Applications
-Goal       : Build useful software and keep improving.
+╔════════════════════════════════════════════════════════╗
+║  PLAYER   : R Shamganesh                               ║
+║  CLASS    : Frontend Developer  ⚔️                      ║
+║  GUILD    : Open Source & Side Projects                ║
+║  LOCATION : India 🇮🇳                                   ║
+║  STATUS   : 🟢 Looking for the next quest (job)         ║
+╠════════════════════════════════════════════════════════╣
+║  SKILL TREE                                            ║
+║  HTML / CSS    ██████████  Lv. 9                       ║
+║  JavaScript    █████████░  Lv. 8                       ║
+║  React         █████████░  Lv. 8                       ║
+║  TypeScript    ███████░░░  Lv. 6                       ║
+║  Node.js       ███████░░░  Lv. 6                       ║
+║  Next.js       ██████░░░░  Lv. 5                       ║
+║  DSA           ████░░░░░░  Lv. 4  (grinding 🔥)        ║
+║  RAG / AI      ████░░░░░░  Lv. 4  (exploring 🧪)       ║
+╚════════════════════════════════════════════════════════╝
 ```
 
-- Building full-stack applications with practical use cases.
-- Working with REST APIs, databases, authentication and frontend interfaces.
-- Exploring AI integrations and retrieval-augmented generation (RAG).
-- Interested in collaborating on meaningful software projects.
+<!-- ═════════════ QUESTS ═════════════ -->
+## 🗺️ Active Quests
 
-## 🛠️ Tech Stack
+| Quest | Details | Status |
+|-------|---------|--------|
+| 🔭 **Main Quest** | Building [kalingar-portal](https://github.com/confinedtitan/kalingar-portal) | 🟡 In progress |
+| 🤝 **Co-op Quest** | [FocusFlow](https://github.com/confinedtitan/FocusFlow) — looking for collaborators & help | 🟢 Recruiting |
+| 🌱 **Training Arc** | Data Structures & Algorithms | 🔵 Daily grind |
+| 🧪 **Side Quest** | RAG pipelines & AI apps | 🟣 Exploring |
+
+<!-- ═════════════ TECH STACK ═════════════ -->
+## 🧰 Inventory (Tech Stack)
 
 <div align="center">
 
-### Languages
+**Frontend**<br/>
+<img src="https://skillicons.dev/icons?i=html,css,js,ts,react,nextjs,vue,tailwind&perline=8" alt="frontend" />
 
-<img src="https://skillicons.dev/icons?i=java,python,js,ts,html,css&theme=dark" alt="Programming languages"/>
+**Backend & Databases**<br/>
+<img src="https://skillicons.dev/icons?i=nodejs,nestjs,django,python,java,mongodb,postgres,mysql,firebase&perline=9" alt="backend" />
 
-### Frontend & Backend
-
-<img src="https://skillicons.dev/icons?i=react,nextjs,nodejs,express,django,fastapi,tailwind&theme=dark" alt="Frontend and backend technologies"/>
-
-### Databases & Tools
-
-<img src="https://skillicons.dev/icons?i=postgres,mongodb,mysql,firebase,git,github,postman,vscode&theme=dark" alt="Databases and developer tools"/>
+**Tools & Cloud**<br/>
+<img src="https://skillicons.dev/icons?i=git,github,aws,figma,postman,flutter,tensorflow&perline=7" alt="tools" />
 
 </div>
 
+<!-- ═════════════ STATS ═════════════ -->
+## 📊 Player Stats
+
+<div align="center">
+
+<img height="180" src="https://github-readme-stats.vercel.app/api?username=confinedtitan&show_icons=true&theme=tokyonight&hide_border=true&include_all_commits=true&count_private=true&rank_icon=github" alt="stats" />
+<img height="180" src="https://github-readme-stats.vercel.app/api/top-langs/?username=confinedtitan&layout=compact&theme=tokyonight&hide_border=true&langs_count=8" alt="top languages" />
+
+<br/>
+
+<img src="https://streak-stats.demolab.com?user=confinedtitan&theme=tokyonight&hide_border=true&border_radius=10" alt="streak" />
+
+</div>
+
+<!-- ═════════════ SNAKE ═════════════ -->
+## 🐍 Contribution Snake
+
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/github-snake-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/github-snake.svg" />
+    <img alt="snake eating my contribution graph" src="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/github-snake.svg" />
+  </picture>
+</div>
+
+<!-- ═════════════ FEATURED PROJECTS ═════════════ -->
 ## 🚀 Featured Projects
 
-<table>
-  <tr>
-    <td width="50%">
-      <h3>FocusFlow</h3>
-      <p>A privacy-conscious adaptive learning concept using voluntary attention check-ins and anonymized insights.</p>
-      <p><b>Tech:</b> Next.js, Convex, AI</p>
-      <a href="https://github.com/confinedtitan/FocusFlow">View Repository →</a>
-    </td>
-    <td width="50%">
-      <h3>Kalingar Temple Trust Portal</h3>
-      <p>A web portal designed to support temple trust operations and membership workflows.</p>
-      <p><b>Tech:</b> React, Django</p>
-      <a href="https://github.com/confinedtitan/kalingar-portal">View Repository →</a>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>AI Fashion Recommendation</h3>
-      <p>An AI and computer-vision project involving pose estimation and intelligent fashion recommendations.</p>
-      <p><b>Tech:</b> Python, React, OpenCV, MediaPipe, TensorFlow</p>
-      <a href="https://portfolio-five-bay-83.vercel.app/">Explore Portfolio →</a>
-    </td>
-    <td width="50%">
-      <h3>More Projects</h3>
-      <p>Explore my other applications, experiments and development work.</p>
-      <a href="https://github.com/confinedtitan?tab=repositories">Browse All Repositories →</a>
-    </td>
-  </tr>
-</table>
-
-## 📊 GitHub Statistics
-
 <div align="center">
 
-  <img height="170" src="https://github-readme-stats.vercel.app/api?username=confinedtitan&show_icons=true&hide_border=true&bg_color=0B1020&title_color=22D3EE&icon_color=7C3AED&text_color=CBD5E1&rank_icon=github" alt="GitHub statistics"/>
+<a href="https://github.com/confinedtitan/kalingar-portal">
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=confinedtitan&repo=kalingar-portal&theme=tokyonight&hide_border=true" alt="kalingar-portal" />
+</a>
+<a href="https://github.com/confinedtitan/FocusFlow">
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=confinedtitan&repo=FocusFlow&theme=tokyonight&hide_border=true" alt="FocusFlow" />
+</a>
 
-  <img height="170" src="https://github-readme-stats.vercel.app/api/top-langs/?username=confinedtitan&layout=compact&hide_border=true&bg_color=0B1020&title_color=22D3EE&text_color=CBD5E1&langs_count=8" alt="Most used languages"/>
+<br/>
 
-  <br/><br/>
-
-  <img src="https://img.shields.io/badge/Public%20Repositories-View%20All-7C3AED?style=for-the-badge&logo=github" alt="Public repositories"/>
-  <a href="https://github.com/confinedtitan?tab=repositories">Browse repositories</a>
+🌐 **[See all my projects → portfolio-five-bay-83.vercel.app](https://portfolio-five-bay-83.vercel.app/)**
 
 </div>
 
-## 🔥 Contribution Streak
+<!-- ═════════════ CONTACT ═════════════ -->
+## 📡 Contact — Join My Party
 
 <div align="center">
 
-  <img width="70%" src="https://streak-stats.demolab.com/?user=confinedtitan&theme=transparent&hide_border=true&ring=7C3AED&fire=22D3EE&currStreakLabel=22D3EE&sideLabels=CBD5E1&dates=94A3B8" alt="GitHub contribution streak"/>
+<a href="mailto:rshamganesh@gmail.com"><img src="https://img.shields.io/badge/Email-rshamganesh%40gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="email" /></a>
+<a href="https://linkedin.com/in/shamganesh-r-394969370"><img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="linkedin" /></a>
+<a href="https://portfolio-five-bay-83.vercel.app/"><img src="https://img.shields.io/badge/Portfolio-Visit-7aa2f7?style=for-the-badge&logo=vercel&logoColor=white" alt="portfolio" /></a>
 
-</div>
+<br/><br/>
 
-## 🐍 Contribution Game
+💬 Ask me about **Full Stack Development** and **RAG**
 
-<div align="center">
+⚡ *Fun fact: I'm between quests right now — hire me and let's change that!*
 
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/github-snake-dark.svg"/>
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/github-snake.svg"/>
-    <img alt="Animated GitHub contribution snake" src="https://raw.githubusercontent.com/confinedtitan/confinedtitan/output/github-snake.svg" width="100%"/>
-  </picture>
-
-</div>
-
-## 🤝 Connect With Me
-
-<div align="center">
-
-  <a href="https://github.com/confinedtitan">
-    <img src="https://img.shields.io/badge/GitHub-Explore%20My%20Code-181717?style=for-the-badge&logo=github" alt="GitHub profile"/>
-  </a>
-
-  <a href="https://linkedin.com/in/shamganesh-r-394969370">
-    <img src="https://img.shields.io/badge/LinkedIn-Let's%20Connect-0A66C2?style=for-the-badge&logo=linkedin" alt="LinkedIn profile"/>
-  </a>
-
-  <a href="mailto:rshamganesh@gmail.com">
-    <img src="https://img.shields.io/badge/Email-Get%20In%20Touch-EA4335?style=for-the-badge&logo=gmail" alt="Email"/>
-  </a>
-
-  <br/><br/>
-
-  <i>Build. Break. Debug. Learn. Repeat.</i>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer" alt="footer" width="100%" />
 
 </div>
